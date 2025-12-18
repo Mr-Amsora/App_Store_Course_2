@@ -1,6 +1,7 @@
 package com.codewithmosh.store.controllers;
 
 import com.codewithmosh.store.dtos.*;
+import com.codewithmosh.store.entities.Role;
 import com.codewithmosh.store.entities.User;
 import com.codewithmosh.store.mappers.UserMapper;
 import com.codewithmosh.store.repositories.UserRepository;
@@ -42,10 +43,8 @@ public class UserController {
         var user= userRepository.findById(id).orElse(null);
         if (user == null) {
             return ResponseEntity.notFound().build();
-            // return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {
             return ResponseEntity.ok(userMapper.toDto(user));
-            // return new ResponseEntity<>(user, HttpStatus.OK);
         }
     }
     @PostMapping
@@ -56,6 +55,7 @@ public class UserController {
         }
         var user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setRole(Role.USER);
         userRepository.save(user);
         var uri = uriBuilder.path("/users/{id}").buildAndExpand(user.getId()).toUri();
         return ResponseEntity.created(uri).body(userMapper.toDto(user));
