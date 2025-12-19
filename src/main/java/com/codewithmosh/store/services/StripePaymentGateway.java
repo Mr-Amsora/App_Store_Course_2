@@ -12,7 +12,6 @@ import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.stripe.param.checkout.SessionCreateParams;
-import io.jsonwebtoken.impl.security.EdwardsCurve;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -37,7 +36,7 @@ public class StripePaymentGateway implements PaymentGateway{
                     .setMode(SessionCreateParams.Mode.PAYMENT)
                     .setSuccessUrl(websiteUrl+"/checkout-success?orderId="+order.getId())
                     .setCancelUrl(websiteUrl+"/checkout-cancel")
-                    .putMetadata("orderId", order.getId().toString());
+                    .setPaymentIntentData(createPaymentIntent(order));
 
             order.getItems().forEach(item ->{ builder.addLineItem(createLineItem(item)); });
 
@@ -48,6 +47,12 @@ public class StripePaymentGateway implements PaymentGateway{
             System.out.println(e.getMessage());
             throw new PaymentException("Failed to create Stripe checkout session");
         }
+    }
+
+    private static SessionCreateParams.PaymentIntentData createPaymentIntent(Order order) {
+        return SessionCreateParams.PaymentIntentData.builder()
+                .putMetadata("order_id", String.valueOf(order.getId()))
+                .build();
     }
 
     @Override
