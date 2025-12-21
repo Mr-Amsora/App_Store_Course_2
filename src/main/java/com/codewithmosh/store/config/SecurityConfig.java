@@ -2,7 +2,9 @@ package com.codewithmosh.store.config;
 
 import com.codewithmosh.store.entities.Role;
 import com.codewithmosh.store.filters.JwtAuthenticationFilter;
+import com.codewithmosh.store.services.UserService;
 import lombok.AllArgsConstructor;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -10,7 +12,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -27,7 +28,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @AllArgsConstructor
 public class SecurityConfig {
-
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final UserDetailsService userService;
 
@@ -38,7 +38,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        var provider = new DaoAuthenticationProvider();
         provider.setPasswordEncoder(passwordEncoder());
         provider.setUserDetailsService(userService);
         return provider;
@@ -51,46 +51,26 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-
-                .cors(Customizer.withDefaults())
-
-                .csrf(AbstractHttpConfigurer::disable)
-
-                .sessionManagement(c ->
-                        c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                .authorizeHttpRequests(c -> c
-
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**"
-                        ).permitAll()
-
-                        .requestMatchers("/carts/**", "/auth/login", "/auth/refresh").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/users").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/checkout/webhook").permitAll()
-
-                        .requestMatchers(HttpMethod.POST, "/products/**").hasRole(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.PUT, "/products/**").hasRole(Role.ADMIN.name())
-                        .requestMatchers(HttpMethod.DELETE, "/products/**").hasRole(Role.ADMIN.name())
+        http.sessionManagement(c ->
+                c.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).
+                csrf(AbstractHttpConfigurer::disable).
+                authorizeHttpRequests(c -> c
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**","/swagger-ui.html").permitAll()
+                        .requestMatchers("/carts/**" , "/auth/login","/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/products/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/products/**").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.PUT,"/products/**").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE,"/products/**").hasRole(Role.ADMIN.name())
                         .requestMatchers("/admin/**").hasRole(Role.ADMIN.name())
-
-                        .anyRequest().authenticated()
-                )
-
+                        .requestMatchers(HttpMethod.POST,"/users").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/checkout/webhook").permitAll().anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-
-                .exceptionHandling(c -> {
+                .exceptionHandling(c ->
+                {
                     c.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
-                    c.accessDeniedHandler((req, res, ex) ->
-                            res.setStatus(HttpStatus.FORBIDDEN.value()));
+                    c.accessDeniedHandler((request, response, accessDeniedException) ->
+                            response.setStatus(HttpStatus.FORBIDDEN.value()));
                 });
-
         return http.build();
     }
 }
