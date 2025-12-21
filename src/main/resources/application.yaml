@@ -7,6 +7,8 @@ spring:
     RefreshTokenExpiration: 604800 # 7 days
   profiles:
     active: dev
+server:
+  forward-headers-strategy: framework
 stripe:
   secretKey: ${STRIPE_SECRET_KEY}
   webhookSecretKey: ${STRIPE_WEBHOOK_SECRET_KEY}
