@@ -60,22 +60,31 @@ public class CheckoutService {
         }
     }
 
-    public void handelWebhookEvent(WebhookRequest request){
-        paymentGateway.parseWebhookRequest(request).ifPresent( paymentResult -> {
+    @Transactional
+    public void handelWebhookEvent(WebhookRequest request) {
+        paymentGateway.parseWebhookRequest(request).ifPresent(paymentResult -> {
+
             var order = orderRepository.findById(paymentResult.getOrderId()).orElse(null);
+            if (order == null) return;
+
             order.setStatus(paymentResult.getPaymentStatus());
             orderRepository.save(order);
+
             if (paymentResult.getPaymentStatus() == PaymentStatus.PAID) {
                 order.getItems().forEach(item -> {
-                    var product = item.getProduct();
-                    int newQuantity = product.getQuantity() - item.getQuantity();
+                    Long productId = item.getProduct().getId();
 
-                    if (newQuantity <= 0) {
-                        productRepository.delete(product);
-                    } else {
-                        product.setQuantity(newQuantity);
+                    productRepository.findById(productId).ifPresent(product -> {
+                        int newQuantity = product.getQuantity() - item.getQuantity();
+
+                        if (newQuantity < 0) {
+                            product.setQuantity(0);
+                        } else {
+                            product.setQuantity(newQuantity);
+                        }
+
                         productRepository.save(product);
-                    }
+                    });
                 });
             }
         });
