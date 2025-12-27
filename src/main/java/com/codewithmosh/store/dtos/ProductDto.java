@@ -15,4 +15,5 @@ public class ProductDto {
     private Byte categoryId;
     private Integer quantity;
     private Long sellerId;
+    private String imageUrl;
 }
