@@ -1,3 +1,11 @@
+INSERT INTO users (id, name, email, password)
+VALUES (
+           1,
+           'System',
+           'system@store.local',
+           '$2a$10$7EqJtq98hPqEX7fNZaFWoOa1J2uQ7n0q8V4R8dP9yG5H6J7K8L9M0'
+       );
+
 ALTER TABLE products
     ADD COLUMN quantity INT NOT NULL DEFAULT 1;
 
