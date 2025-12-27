@@ -35,6 +35,9 @@ public class Product {
     @JoinColumn(name = "seller_id", nullable = false)
     private User seller;
 
+    @Column(name = "image")
+    private String imageUrl;
+
     @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "category_id")
     private Category category;
