@@ -27,6 +27,14 @@ public class Product {
     @Column(name = "price")
     private BigDecimal price;
 
+    @Column(name = "quantity")
+    private Integer quantity;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_id", nullable = false)
+    private User seller;
+
     @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "category_id")
     private Category category;

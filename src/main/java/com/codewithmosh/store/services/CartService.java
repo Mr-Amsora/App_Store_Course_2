@@ -19,6 +19,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CartService {
 
+    private final UserService userService;
+    private final AuthService authService;
     private CartRepository cartRepository;
     private CartMapper cartMapper;
     private ProductRepository productRepository;
@@ -26,25 +28,27 @@ public class CartService {
 
     public CartDto creatCart() {
         var cart = new Cart();
+        cart.setUser(authService.findCurrentUser());
         cartRepository.save(cart);
         return cartMapper.toCartDto(cart);
     }
 
-    public CartItemDto addToCart(UUID cartId,long productId)  {
-        var cart = cartRepository.findById(cartId).orElse(null);
-        CartItemDto response;
-        if (cart == null) {
-            throw new CartNotFoundException("Cart not found");
-        }
-        var product = productRepository.findById(productId).orElse(null);
-        if (product == null) {
-            throw new ProductNotFoundException("Product not found");
-        }
+    public CartItemDto addToCart(UUID cartId, long productId) {
+        var cart = cartRepository.findById(cartId).orElseThrow(
+                () -> new CartNotFoundException("Cart not found")
+        );
+
+        var product = productRepository.findById(productId).orElseThrow(
+                () -> new ProductNotFoundException("Product not found")
+        );
+
         var cartItem = cart.addItem(product);
 
         cartRepository.save(cart);
+
         return cartItemMapper.toDto(cartItem);
     }
+
 
     public CartDto getCart(UUID cartId) {
         var cart = cartRepository.findById(cartId).orElse(null);

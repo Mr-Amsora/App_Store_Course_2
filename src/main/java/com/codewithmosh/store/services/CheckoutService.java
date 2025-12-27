@@ -10,11 +10,8 @@ import com.codewithmosh.store.exceptions.PaymentException;
 import com.codewithmosh.store.exceptions.UnAuthorizedAccessException;
 import com.codewithmosh.store.repositories.CartRepository;
 import com.codewithmosh.store.repositories.OrderRepository;
-import com.stripe.exception.SignatureVerificationException;
-import com.stripe.model.PaymentIntent;
-import com.stripe.net.Webhook;
+import com.codewithmosh.store.repositories.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +25,7 @@ public class CheckoutService {
     private final AuthService authService;
     private final CartService cartService;
     private final PaymentGateway paymentGateway;
+    private final ProductRepository productRepository;
 
 
     @Transactional
@@ -49,7 +47,6 @@ public class CheckoutService {
         orderRepository.save(order);
 
         try {
-            //create checkout session
             var session = paymentGateway.createCheckoutSession(order);
             cartService.clearCart(cart.getId());
             var response = new CheckoutResponseDto();
@@ -68,6 +65,19 @@ public class CheckoutService {
             var order = orderRepository.findById(paymentResult.getOrderId()).orElse(null);
             order.setStatus(paymentResult.getPaymentStatus());
             orderRepository.save(order);
+            if (paymentResult.getPaymentStatus() == PaymentStatus.PAID) {
+                order.getItems().forEach(item -> {
+                    var product = item.getProduct();
+                    int newQuantity = product.getQuantity() - item.getQuantity();
+
+                    if (newQuantity <= 0) {
+                        productRepository.delete(product);
+                    } else {
+                        product.setQuantity(newQuantity);
+                        productRepository.save(product);
+                    }
+                });
+            }
         });
     }
 
