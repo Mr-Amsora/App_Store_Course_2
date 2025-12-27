@@ -8,6 +8,7 @@ import com.codewithmosh.store.entities.Cart;
 import com.codewithmosh.store.exceptions.CartNotFoundException;
 import com.codewithmosh.store.exceptions.OutOfStockException;
 import com.codewithmosh.store.exceptions.ProductNotFoundException;
+import com.codewithmosh.store.mappers.CartMapper;
 import com.codewithmosh.store.repositories.CartRepository;
 import com.codewithmosh.store.services.AuthService;
 import com.codewithmosh.store.services.CartService;
@@ -33,6 +34,7 @@ public class CartController {
     private final CartService cartService;
     private final CartRepository cartRepository;
     private final AuthService authService;
+    private final CartMapper cartMapper;
 
     @PostMapping
     public ResponseEntity<CartDto> createCart(UriComponentsBuilder uriComponentsBuilder) {
@@ -73,12 +75,19 @@ public class CartController {
     }
 
     @GetMapping("/my-carts")
-    public ResponseEntity<?> getCartsByUser() {
-        List<Cart> carts = cartRepository.getCartsByUser(authService.findCurrentUser()).orElse(null);
+    public ResponseEntity<List<CartDto>> getCartsByUser() {
+        var user = authService.findCurrentUser();
+        List<Cart> carts = cartRepository.getCartsByUser(user).orElse(null);
+
         if (carts == null || carts.isEmpty()) {
-            throw new CartNotFoundException("No carts found for the user");
+            return ResponseEntity.ok(List.of());
         }
-        return ResponseEntity.ok(carts);
+
+        List<CartDto> cartDtos = carts.stream()
+                .map(cartMapper::toCartDto)
+                .toList();
+
+        return ResponseEntity.ok(cartDtos);
     }
 
 
