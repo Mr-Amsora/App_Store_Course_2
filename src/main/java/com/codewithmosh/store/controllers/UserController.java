@@ -5,6 +5,7 @@ import com.codewithmosh.store.entities.Role;
 import com.codewithmosh.store.entities.User;
 import com.codewithmosh.store.mappers.UserMapper;
 import com.codewithmosh.store.repositories.UserRepository;
+import com.codewithmosh.store.services.AuthService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -26,6 +27,7 @@ public class UserController {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final AuthService authService;
 
     @GetMapping
     public Iterable<UserDto> getAllUsers(
@@ -79,8 +81,9 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/change-password")
-    public ResponseEntity<Void> changePassword(@PathVariable long id ,@RequestBody ChangePasswordRequest request) {
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@RequestBody ChangePasswordRequest request) {
+        var id = authService.findCurrentUser().getId();
         var user =userRepository.findById(id).orElse(null);
         if (user == null) {
             return ResponseEntity.notFound().build();
