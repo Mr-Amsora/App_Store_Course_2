@@ -89,7 +89,7 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
         if (!user.getPassword().equals(request.getOldPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.LOCKED).build();
         }
         user.setPassword(request.getNewPassword());
         userRepository.save(user);
