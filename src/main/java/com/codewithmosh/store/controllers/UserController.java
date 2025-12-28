@@ -11,6 +11,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -28,6 +30,7 @@ public class UserController {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthService authService;
+    private final AuthenticationManager authenticationManager;
 
     @GetMapping
     public Iterable<UserDto> getAllUsers(
@@ -88,10 +91,10 @@ public class UserController {
         if (user == null) {
             return ResponseEntity.notFound().build();
         }
-        if (!user.getPassword().equals(request.getOldPassword())) {
-            return ResponseEntity.status(HttpStatus.LOCKED).build();
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.I_AM_A_TEAPOT).build();
         }
-        user.setPassword(request.getNewPassword());
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         return ResponseEntity.noContent().build();
     }
