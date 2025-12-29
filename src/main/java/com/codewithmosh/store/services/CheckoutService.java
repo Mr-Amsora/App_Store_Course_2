@@ -78,7 +78,7 @@ public class CheckoutService {
                         int newQuantity = product.getQuantity() - item.getQuantity();
                         var carts = cartRepository.findAll();
 
-                        if (newQuantity < 0) {
+                        if (newQuantity <= 0) {
                             product.setQuantity(0);
                             for (var cart : carts) {
                                 cart.getItems().removeIf(cartItem -> cartItem.getProduct().getId().equals(productId));
