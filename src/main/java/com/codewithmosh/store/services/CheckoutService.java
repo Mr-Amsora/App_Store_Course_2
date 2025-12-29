@@ -76,13 +76,24 @@ public class CheckoutService {
 
                     productRepository.findById(productId).ifPresent(product -> {
                         int newQuantity = product.getQuantity() - item.getQuantity();
+                        var carts = cartRepository.findAll();
 
                         if (newQuantity < 0) {
                             product.setQuantity(0);
+                            for (var cart : carts) {
+                                cart.getItems().removeIf(cartItem -> cartItem.getProduct().getId().equals(productId));
+                                cartRepository.save(cart);
+                            }
                         } else {
                             product.setQuantity(newQuantity);
+                            for (var cart : carts) {
+                                var cartItem = cart.getItemByProductId(productId);
+                                if (cartItem != null && cartItem.getQuantity() > newQuantity) {
+                                    cartItem.setQuantity(newQuantity);
+                                    cartRepository.save(cart);
+                                }
+                            }
                         }
-
                         productRepository.save(product);
                     });
                 });
